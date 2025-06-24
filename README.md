@@ -48,6 +48,19 @@ YourEnemy/
 ├── Animate (Script)
 ```
 
+## How it should look ingame
+
+```
+YourEnemy/
+├── Configuration (ModuleScript)
+├── Main.lua
+│   ├── State.lua
+│   │   ├── Patrolling.lua
+│   │   └── Searching.lua
+│   │   └── Chasing.lua
+├── Animate (Script)
+```
+
 ---
 
 ## Files

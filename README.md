@@ -38,9 +38,10 @@ It uses:
 ```
 YourEnemy/
 ├── Configuration (ModuleScript)
+├── Main.lua
 ├── Main (Folder)
-│   ├── Main.lua
-│   ├── State/
+│   ├── State.lua
+│   ├── State (Folder)
 │   │   ├── Patrolling.lua
 │   │   └── Searching.lua
 │   │   └── Chasing.lua

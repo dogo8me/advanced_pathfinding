@@ -1,10 +1,8 @@
----
-
 # Advanced Enemy Patrol & Search AI
 
 This is a modular enemy AI system for Roblox (Luau) built with advanced search and patrol mechanics. Enemies can detect, pursue, and investigate players intelligently using a mix of raycasting, pathfinding, and proximity-based logic.
 
-> built for flexibility, realism, and performance. plug it into stealth games, action shooters, or anything needing dynamic NPC behavior.
+> designed for realism, and performance in a maze based map
 
 ---
 

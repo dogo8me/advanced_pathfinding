@@ -13,6 +13,7 @@ local searchState = require(script.Main.State.Searching)
 local main = require(script.Main)
 local humanoid = character:WaitForChild("Humanoid")
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local soundEvent = game.ReplicatedStorage.SoundEvent
 local nodesFolder = workspace.Nodes
 
 --// TYPES
@@ -21,6 +22,7 @@ type BehaviorState = "SEARCHING" | "PATROLLING" | "CHASING"
 --// VARIABLES
 local patrolAlgorithm
 local searchAlgorithm
+local soundEventConnection
 local raycastParams = RaycastParams.new()
 raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 raycastParams.FilterDescendantsInstances = {character}
@@ -36,12 +38,27 @@ floorPosition = main.getFloorPosition(character) - humanoidRootPart.Position
 local function changeBehaviorState(state: BehaviorState, targetPlayer: Player?, lastKnownLocation: Vector3?)
 	if patrolAlgorithm then task.cancel(patrolAlgorithm) end
 	if searchAlgorithm then task.cancel(searchAlgorithm) end
+	if soundEventConnection then soundEventConnection:Disconnect() end
 	print(state)
 	if state == "PATROLLING" then
 		patrolAlgorithm = task.spawn(patrolState.patrol)
 
 		main.searchForPlayer(function(targetPlayer)
 			changeBehaviorState("CHASING", targetPlayer)
+		end)
+		
+		soundEventConnection = soundEvent.OnClientEvent:Connect(function(player: Player, typeOfSound, location: Vector3)
+			if typeOfSound == "WALKING" then
+				local canBeHeard = main.evaluateSoundLoss(location, main.humanoidRootPart.Position, 1, 1)
+				if canBeHeard then
+					changeBehaviorState("SEARCHING", player, location)
+				end
+			else
+				local canBeHeard = main.evaluateSoundLoss(location, main.humanoidRootPart.Position, 3, 1)
+				if canBeHeard then
+					changeBehaviorState("SEARCHING", player, location)
+				end
+			end
 		end)
 	elseif state == "SEARCHING" then -- searches for the player from the last known location
 		searchAlgorithm = task.spawn(function() searchState.search(targetPlayer, lastKnownLocation) end)

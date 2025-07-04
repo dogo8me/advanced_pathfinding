@@ -54,11 +54,35 @@ function main.getNodesInRadius(referencePos: Vector3, radius: number, includeSea
 	for _, node: BasePart in nodesFolder:GetChildren() do
 		local distance = (node.Position - referencePos).Magnitude
 		if distance <= radius then
-			if not includeSearched and node:GetAttribute("isSearched") == true then continue end
-			table.insert(nodesInRadius, node)
+			if not includeSearched and node:GetAttribute("IsSearched") ~= true then table.insert(nodesInRadius, node) else table.insert(nodesInRadius, node) end
 		end
 	end
 	return nodesInRadius
+end
+
+function main.evaluateSoundLoss(positionOne: Vector3, positionTwo: Vector3, loudness: number, lossPerWall: number): boolean
+	local direction = (positionOne - positionTwo)
+	local wallCount = 0
+	
+	local players = game.Players:GetPlayers()
+	local exclusions = {}
+	
+	for _, player in players do
+		if not player.Character then return end
+		table.insert(exclusions, player.Character)
+	end
+	
+	local rayCastParams = RaycastParams.new()
+	rayCastParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayCastParams.FilterDescendantsInstances = exclusions
+	
+	local rayCast
+	repeat 
+		rayCast = workspace:Raycast(positionOne, direction) if rayCast.Instance.Parent ~= character then table.insert(exclusions, rayCast.Instance) wallCount += 1 end
+	until
+		rayCast.Instance.Parent == character
+	
+	return loudness - (lossPerWall * wallCount) > 0
 end
 
 -- gets a random node within the node folder
@@ -83,8 +107,7 @@ function main.getClosestNode(humanoidRootPart: BasePart, includeSearched: boolea
 	local distances = {}
 	for _, node in nodes do
 		local distance = (node.Position - humanoidRootPart.Position).Magnitude
-		if node:GetAttribute("IsSearched") == true and not includeSearched then continue end
-		distances[node] = distance
+		if not includeSearched and node:GetAttribute("IsSearched") ~= true then distances[node] = distance end
 	end
 	local smallestDistance, smallestNode
 	for node, distance in distances do
@@ -93,6 +116,23 @@ function main.getClosestNode(humanoidRootPart: BasePart, includeSearched: boolea
 		end
 	end
 	return smallestNode
+end
+
+-- get the farthest node to the enemy
+function main.getFarthestNode(humanoidRootPart: BasePart, includeSearched: boolean?, nodeList: {BasePart}?): {}
+	local nodes = nodeList or nodesFolder:GetChildren()
+	local distances = {}
+	for _, node in nodes do
+		local distance = (node.Position - humanoidRootPart.Position).Magnitude
+		if not includeSearched and node:GetAttribute("IsSearched") ~= true then distances[node] = distance end
+	end
+	local largestDistance, largestNode
+	for node, distance in distances do
+		if not largestDistance or distance > largestDistance then
+			largestDistance, largestNode = distance, node
+		end
+	end
+	return largestNode
 end
 
 function main.createTempPart(position: Vector3, lifespan: number, color: BrickColor)
@@ -111,6 +151,7 @@ function main.visualizeRay(origin: Vector3, direction: Vector3)
 	Raycast.CFrame = CFrame.new(origin + direction/2, origin + direction)
 	Raycast.Anchored = true
 	Raycast.CanCollide = false
+	Raycast.CanQuery = false
 	Raycast.Name = "Raycast"
 	Raycast.Size = Vector3.new(0.075, 0.075, direction.Magnitude)
 	Raycast.Parent = workspace
@@ -162,32 +203,30 @@ function main.isInLineOfSight(startingPart: Vector3, targetPart: BasePart): bool
 	end
 end
 
-function main.isInLineOfSightFOV(targetPart: BasePart, fieldOfView: number): boolean
-	local fieldOfView = math.cos(math.rad(fieldOfView))
+function main.isInFOV(targetPart: BasePart, fieldOfView: number, startingPart: Part?): boolean
+	local fieldOfView = math.cos(math.rad(fieldOfView / 2))
+	local head = startingPart or character:FindFirstChild("Head")
+	local direction = (targetPart.Position - head.Position).Unit
+	local lookVector = head.CFrame.LookVector
+	local dot = lookVector:Dot(direction)
+
+	return dot >= fieldOfView
+end
+
+function main.isInLineOfSightFOV(targetPart: BasePart): boolean
 	local rayCastParams = RaycastParams.new()
 	rayCastParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayCastParams.FilterDescendantsInstances = {character}
 	local head = character:FindFirstChild("Head")
 	local direction = (targetPart.Position - head.Position).Unit
-	local lookVector = head.CFrame.LookVector
-	local dot = lookVector:Dot(direction)
 	local rayResult = workspace:Raycast(head.Position, direction * ConfigMaxDistance, rayCastParams)
-	main.visualizeRay(head.Position, direction * 1000)
-	print(targetPart.Position)
 	if rayResult then
-		print("rayresult")
 		if rayResult.Instance then
-			print("rayresult instance")
 			if rayResult.Instance == targetPart then
-				print("instance is part")
-				if dot > fieldOfView then
-					print("in FOV")
+				if main.isInFOV(targetPart, ConfigFieldOfView) then
+					main.visualizeRay(head.Position, direction * 1000)
 					return true
 				end
-			else
-				print(targetPart)
-				print("-------")
-				print(rayResult.Instance)
 			end
 		end
 	end

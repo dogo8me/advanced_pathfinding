@@ -8,13 +8,13 @@ This is a modular enemy AI system for Roblox (Luau) built with advanced search a
 
 ## Features
 
-* **Field of view detection** with limb-based visibility
-* **Search mode** triggered by last known location
-* **LOS-based chasing** (ignores pathfinding when direct sight exists)
-* **Sound-based player tracking** (footstep simulation)
-* **Stamina system** for enemy movement control
-* **Dynamic attack cooldowns**
-* Modular, customizable config (range, FOV, behavior)
+* **Field of view detection** with limb-based visibility - Implemented
+* **Search mode** triggered by last known location - Implemented
+* **LOS-based chasing** (ignores pathfinding when direct sight exists) - Implemented
+* **Sound-based player tracking** (footstep simulation) - Implemented
+* **Stamina system** for enemy movement control - To be completed
+* **Dynamic attack cooldowns** - To be completed
+* Modular, customizable config (range, FOV, speed) - In progress
 
 ---
 
